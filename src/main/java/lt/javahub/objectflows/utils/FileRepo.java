@@ -15,8 +15,8 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
-import lt.visma.javahub.flows.Context;
 import lt.visma.javahub.flows.Flow;
+import lt.visma.javahub.flows.Scope;
 import lt.visma.javahub.flows.engine.IFlowsRepository;
 import lt.visma.javahub.flows.impl.SequentialFlow;
 import lt.visma.javahub.flows.json.JsonSerializer;
@@ -30,13 +30,13 @@ import lt.visma.javahub.flows.json.JsonSerializer;
 public class FileRepo implements IFlowsRepository{
 
 	private static final String FLOW_FILE_PREFIX = "flow_";
-	private static final String CONTEXT_FILE_PREFIX = "context_";
+	private static final String SCOPE_FILE_PREFIX = "scope_";
 	
 	private static final String FLOW_FILE_EXTENSION = ".json";
-	private static final String CONTEXT_FILE_EXTENSION = FLOW_FILE_EXTENSION;
+	private static final String SCOPE_FILE_EXTENSION = FLOW_FILE_EXTENSION;
 	
 	private String flowFilePrefix;
-	private String contextFilePrefix;
+	private String scopeFilePrefix;
 
 	public FileRepo() {
 		this("default-repo");
@@ -44,7 +44,7 @@ public class FileRepo implements IFlowsRepository{
 	
 	public FileRepo(String repoPrefix) {
 		this.flowFilePrefix    = repoPrefix+"_"+FLOW_FILE_PREFIX;
-		this.contextFilePrefix = repoPrefix+"_"+CONTEXT_FILE_PREFIX;
+		this.scopeFilePrefix = repoPrefix+"_"+SCOPE_FILE_PREFIX;
 	}
 	
 	@Value("${tempdir}")
@@ -66,18 +66,18 @@ public class FileRepo implements IFlowsRepository{
 	
 	@Override
 	public String persist(Flow flow) {
-		return persist(flow, flow.getContext());
+		return persist(flow, flow.getScope());
 	}
 
-	public String persist(Flow flow, Context context) {	
-		String contextJson = JsonSerializer.serialize(context);
+	public String persist(Flow flow, Scope scope) {	
+		String scopeJson = JsonSerializer.serialize(scope);
 
 		flow = getRootFlow(flow);
 		
-		String correlationId = context.getCorrelationID();
+		String correlationId = scope.getCorrelationID();
 		
-		try(BufferedWriter writer = new BufferedWriter(new FileWriter(contextFilePath(correlationId)))){
-			writer.write(contextJson);
+		try(BufferedWriter writer = new BufferedWriter(new FileWriter(scopeFilePath(correlationId)))){
+			writer.write(scopeJson);
 		}catch(IOException ioe) {
 			throw new RuntimeException(ioe.getMessage());
 		}
@@ -95,18 +95,18 @@ public class FileRepo implements IFlowsRepository{
 
 	@Override
 	public Flow restore(String correlationId) {
-		Context context = loadFromFile(contextFilePath(correlationId), Context.class);
+		Scope scope = loadFromFile(scopeFilePath(correlationId), Scope.class);
 		SequentialFlow flow = loadFromFile(flowFilePath(correlationId), SequentialFlow.class);
 		
 		if (flow != null)
-			flow.setContext(context);
+			flow.setScope(scope);
 		
 		return flow;
 	}
 	
 	@Override
 	public void delete(String correlationId) {
-		new File(contextFilePath(correlationId)).delete();
+		new File(scopeFilePath(correlationId)).delete();
 		new File(flowFilePath(correlationId)).delete();
 	}
 	
@@ -137,8 +137,8 @@ public class FileRepo implements IFlowsRepository{
 		return FOLDER + flowFilePrefix + correlationId + FLOW_FILE_EXTENSION;
 	}
 
-	private String contextFilePath(String correlationId) {
-		return FOLDER + contextFilePrefix + correlationId + CONTEXT_FILE_EXTENSION;
+	private String scopeFilePath(String correlationId) {
+		return FOLDER + scopeFilePrefix + correlationId + SCOPE_FILE_EXTENSION;
 	}
 	
 	private static Flow getRootFlow(Flow flow) {

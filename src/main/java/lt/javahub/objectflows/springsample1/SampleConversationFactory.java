@@ -47,11 +47,11 @@ public class SampleConversationFactory {
 
 		@Override
 		protected Result execute() {
-			String recipient = context.getString("recipient");
-			getDependencies().getService(SampleConversationClient.class).onStarted(recipient);
+			String recipient = getScope().getString("recipient");
+			getScope().getService(SampleConversationClient.class).onStarted(recipient);
 			
-			EmailService emailService = dependencies.getService(EmailService.class);
-			emailService.sendEmail(recipient, "Hello!", "This is a hello message", context.getCorrelationID());
+			EmailService emailService = getScope().getService(EmailService.class);
+			emailService.sendEmail(recipient, "Hello!", "This is a hello message", getScope().getCorrelationID());
 			log.info("just finished SendGreetingsEmail flow");
 			
 			return Result.COMPLETED;
@@ -69,7 +69,7 @@ public class SampleConversationFactory {
 		
 		@Override
 		protected Result execute() {
-			EmailDTO email = context.get("email", EmailDTO.class);
+			EmailDTO email = getScope().get("email", EmailDTO.class);
 			
 			log.info("Email received: from ["+email.getFrom()+"] subj: '"+email.getSubject()+"' text: '"+ email.getBody()+"'");
 			
@@ -88,8 +88,8 @@ public class SampleConversationFactory {
 	public static class SucceededFlow extends Flow{
 		@Override
 		protected Result execute() {
-			String recipient = context.getString("recipient");
-			getDependencies().getService(SampleConversationClient.class).onSuccess(recipient);
+			String recipient = getScope().getString("recipient");
+			getScope().getService(SampleConversationClient.class).onSuccess(recipient);
 			
 			return Result.COMPLETED;
 		}
@@ -98,8 +98,8 @@ public class SampleConversationFactory {
 	public static class TimeoutedFlow extends Flow{
 		@Override
 		protected Result execute() {
-			String recipient = context.getString("recipient");
-			getDependencies().getService(SampleConversationClient.class).onTimeout(recipient);
+			String recipient = getScope().getString("recipient");
+			getScope().getService(SampleConversationClient.class).onTimeout(recipient);
 			
 			return new Result(ResultStatus.FAILED);
 		}
@@ -108,8 +108,8 @@ public class SampleConversationFactory {
 	public static class FailedFlow extends Flow{
 		@Override
 		protected Result execute() {
-			String recipient = context.getString("recipient");
-			getDependencies().getService(SampleConversationClient.class).onFailure(recipient);
+			String recipient = getScope().getString("recipient");
+			getScope().getService(SampleConversationClient.class).onFailure(recipient);
 			
 			return new Result(ResultStatus.FAILED);
 		}
